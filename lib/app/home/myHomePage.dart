@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:listadetarefas/app/data/myData.dart';
 
 class MyHomePage extends StatefulWidget {
   @override
@@ -11,17 +9,15 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final _toDoController = TextEditingController();
-  List _toDoList = [];
+  MyData data = MyData();
   Map<String, dynamic> _lastRemoved;
   int _indexLastRemoved;
 
   @override
-  void initState() {
+  void initState(){
     super.initState();
-    _readData().then((data) {
-      setState(() {
-        _toDoList = json.decode(data);
-      });
+    setState(() {
+      data.readData();
     });
   }
 
@@ -32,31 +28,22 @@ class _MyHomePageState extends State<MyHomePage> {
       newToDo["title"] = text;
       newToDo["finished"] = false;
       setState(() {
-        _toDoList.insert(0, newToDo);
+        data.addData(0, newToDo);
         _toDoController.clear();
       });
-      _saveData();
     }
   }
 
   void _changeState(bool finished, int index) {
     setState(() {
-      _toDoList[index]["finished"] = finished;
+      data.changeState(finished, index);
     });
-    _saveData();
   }
 
   Future<Null> _refreshToDoList() async {
     await Future.delayed(Duration(seconds: 1));
     setState(() {
-      _toDoList.sort((element1, element2) {
-        if (element1["finished"] == true) {
-          return 1;
-        } else {
-          return -1;
-        }
-      });
-      _saveData();
+      data.sortData();
     });
     return null;
   }
@@ -98,7 +85,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 onRefresh: _refreshToDoList,
                 child: ListView.builder(
                     padding: EdgeInsets.only(top: 10),
-                    itemCount: _toDoList.length,
+                    itemCount: data.length(),
                     itemBuilder: _buildItem),
               ))
         ],
@@ -120,26 +107,24 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       direction: DismissDirection.startToEnd,
       child: CheckboxListTile(
-          title: Text(_toDoList[index]["title"]),
-          value: _toDoList[index]["finished"],
+          title: Text(data.getTitle(index)),
+          value: data.getFinished(index),
           secondary: CircleAvatar(
               child: Icon(
-                  _toDoList[index]["finished"] ? Icons.check : Icons.error)),
+                  data.getFinished(index) ? Icons.check : Icons.error)),
           onChanged: (finished) => _changeState(finished, index)),
       onDismissed: (direction) {
-        _lastRemoved = Map.from(_toDoList[index]);
+        _lastRemoved = Map.from(data.getDataIndex(index));
         _indexLastRemoved = index;
         setState(() {
-          _toDoList.removeAt(index);
-          _saveData();
+          data.removeAt(index);
           final snackBar = SnackBar(
             content: Text("Tarefa Removida! '${_lastRemoved["title"]}'."),
             action: SnackBarAction(
               label: "Desfazer",
               onPressed: () {
                 setState(() {
-                  _toDoList.insert(_indexLastRemoved, _lastRemoved);
-                  _saveData();
+                  data.addData(_indexLastRemoved, _lastRemoved);
                 });
               },
               textColor: Colors.red,
@@ -153,23 +138,5 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Future<File> _getFile() async {
-    final directory = await getApplicationDocumentsDirectory();
-    return File("${directory.path}/data.json");
-  }
 
-  Future<File> _saveData() async {
-    String data = json.encode(_toDoList);
-    final file = await _getFile();
-    return file.writeAsString(data);
-  }
-
-  Future<String> _readData() async {
-    try {
-      final file = await _getFile();
-      return file.readAsString();
-    } catch (e) {
-      return null;
-    }
-  }
 }
