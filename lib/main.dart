@@ -41,14 +41,17 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _addToDoList() {
-    Map<String, dynamic> newToDo = Map();
-    newToDo["title"] = _toDoController.text;
-    newToDo["finished"] = false;
-    setState(() {
-      _toDoList.add(newToDo);
-      _toDoController.clear();
-    });
-    _saveData();
+    String text = _toDoController.text.trim();
+    if(text.isNotEmpty){
+      Map<String, dynamic> newToDo = Map();
+      newToDo["title"] = text;
+      newToDo["finished"] = false;
+      setState(() {
+        _toDoList.insert(0, newToDo);
+        _toDoController.clear();
+      });
+      _saveData();
+    }
   }
 
   void _changeState(bool finished, int index) {
@@ -56,6 +59,21 @@ class _MyHomePageState extends State<MyHomePage> {
       _toDoList[index]["finished"] = finished;
     });
     _saveData();
+  }
+
+  Future<Null> _refreshToDoList() async {
+    await Future.delayed(Duration(seconds: 1));
+    setState(() {
+      _toDoList.sort((element1, element2) {
+        if (element1["finished"] == true) {
+          return 1;
+        } else {
+          return -1;
+        }
+      });
+      _saveData();
+    });
+    return null;
   }
 
   @override
@@ -75,6 +93,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 Expanded(
                   child: TextField(
                     controller: _toDoController,
+                    onEditingComplete: _addToDoList,
                     decoration: InputDecoration(
                         labelText: "Nova Tarefa",
                         labelStyle: TextStyle(color: Colors.blueAccent)),
@@ -90,11 +109,13 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
           Expanded(
+              child: RefreshIndicator(
+            onRefresh: _refreshToDoList,
             child: ListView.builder(
                 padding: EdgeInsets.only(top: 10),
                 itemCount: _toDoList.length,
                 itemBuilder: _buildItem),
-          )
+          ))
         ],
       ),
     );
@@ -106,17 +127,19 @@ class _MyHomePageState extends State<MyHomePage> {
       background: Container(
         color: Colors.red,
         child: Align(
-          alignment: Alignment(-0.9, 0.0),
-          child: Icon(Icons.delete, color: Colors.white,)
-        ),
+            alignment: Alignment(-0.9, 0.0),
+            child: Icon(
+              Icons.delete,
+              color: Colors.white,
+            )),
       ),
       direction: DismissDirection.startToEnd,
       child: CheckboxListTile(
           title: Text(_toDoList[index]["title"]),
           value: _toDoList[index]["finished"],
           secondary: CircleAvatar(
-              child:
-              Icon(_toDoList[index]["finished"] ? Icons.check : Icons.error)),
+              child: Icon(
+                  _toDoList[index]["finished"] ? Icons.check : Icons.error)),
           onChanged: (finished) => _changeState(finished, index)),
       onDismissed: (direction) {
         _lastRemoved = Map.from(_toDoList[index]);
@@ -126,7 +149,7 @@ class _MyHomePageState extends State<MyHomePage> {
           _saveData();
           final snackBar = SnackBar(
             content: Text("Tarefa Removida! '${_lastRemoved["title"]}'."),
-            action: Snack SnackBarAction(
+            action: SnackBarAction(
               label: "Desfazer",
               onPressed: () {
                 setState(() {
@@ -136,12 +159,10 @@ class _MyHomePageState extends State<MyHomePage> {
               },
               textColor: Colors.red,
             ),
-            duration: Duration(seconds: 5),
-
+            duration: Duration(seconds: 3),
           );
           Scaffold.of(context).showSnackBar(snackBar);
         });
-
       },
     );
   }
