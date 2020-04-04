@@ -28,6 +28,17 @@ class _MyHomePageState extends State<MyHomePage> {
   final _toDoController = TextEditingController();
   List _toDoList = [];
 
+
+  @override
+  void initState() {
+    super.initState();
+    _readData().then((data) {
+      setState(() {
+        _toDoList = json.decode(data);
+      });
+    });
+  }
+
   void _addToDoList() {
     Map<String, dynamic> newToDo = Map();
     newToDo["title"] = _toDoController.text;
@@ -36,12 +47,14 @@ class _MyHomePageState extends State<MyHomePage> {
       _toDoList.add(newToDo);
       _toDoController.clear();
     });
+    _saveData();
   }
 
   void _changeState(bool finished, int index) {
     setState(() {
       _toDoList[index]["finished"] = finished;
     });
+    _saveData();
   }
 
   @override
