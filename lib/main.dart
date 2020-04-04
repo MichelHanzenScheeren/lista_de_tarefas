@@ -28,7 +28,6 @@ class _MyHomePageState extends State<MyHomePage> {
   final _toDoController = TextEditingController();
   List _toDoList = [];
 
-
   @override
   void initState() {
     super.initState();
@@ -92,20 +91,31 @@ class _MyHomePageState extends State<MyHomePage> {
             child: ListView.builder(
                 padding: EdgeInsets.only(top: 10),
                 itemCount: _toDoList.length,
-                itemBuilder: (context, index) {
-                  return CheckboxListTile(
-                    title: Text(_toDoList[index]["title"]),
-                    value: _toDoList[index]["finished"],
-                    secondary: CircleAvatar(
-                        child: Icon(_toDoList[index]["finished"]
-                            ? Icons.check
-                            : Icons.error)),
-                    onChanged: (finished) => _changeState(finished, index)
-                  );
-                }),
+                itemBuilder: _buildItem),
           )
         ],
       ),
+    );
+  }
+
+  Widget _buildItem(context, index) {
+    return Dismissible(
+      key: Key(DateTime.now().millisecondsSinceEpoch.toString()),
+      background: Container(
+        color: Colors.red,
+        child: Align(
+          alignment: Alignment(-0.9, 0.0),
+          child: Icon(Icons.delete, color: Colors.white,)
+        ),
+      ),
+      direction: DismissDirection.startToEnd,
+      child: CheckboxListTile(
+          title: Text(_toDoList[index]["title"]),
+          value: _toDoList[index]["finished"],
+          secondary: CircleAvatar(
+              child:
+              Icon(_toDoList[index]["finished"] ? Icons.check : Icons.error)),
+          onChanged: (finished) => _changeState(finished, index)),
     );
   }
 
