@@ -159,8 +159,9 @@ class _MyHomePageState extends State<MyHomePage> {
               },
               textColor: Colors.red,
             ),
-            duration: Duration(seconds: 3),
+            duration: Duration(seconds: 5),
           );
+          Scaffold.of(context).removeCurrentSnackBar();
           Scaffold.of(context).showSnackBar(snackBar);
         });
       },
